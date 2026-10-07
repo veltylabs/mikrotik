@@ -1,4 +1,5 @@
 # mikrotik
+<img src="docs/img/badges.svg">
 
 `mikrotik` makes a MikroTik router (RouterOS) behave as a `webtyp.com/network` gateway: an application describes which devices may use the network and how much of it, and this package translates that into DHCP leases, firewall rules and DNS redirection on the router, through the RouterOS API.
 
