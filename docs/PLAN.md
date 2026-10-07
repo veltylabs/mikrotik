@@ -3,8 +3,9 @@ PLAN: "feat: MikroTik RouterOS gateway for webtyp.com/network (v6 and v7 dialect
 TAG: v0.1.0
 EXECUTOR: jules
 REVIEWER: none
-STATUS: running
+STATUS: review
 SESSION: 15763923957148261922
+PR: https://github.com/veltylabs/mikrotik/pull/1
 ---
 
 > This plan is dispatched via the CodeJob workflow. See skill: agents-workflow.
@@ -353,3 +354,6 @@ Missing user in the URL → error `mikrotik: ROUTER_URL has no user`.
 | 4 | `mikrotik.go` | `Open` parses, dials, selects |
 | 5 | `tests/*.go`, `docker-compose.test.yml` | `gotest ./...` green |
 | 6 | `README.md`, verify ARCHITECTURE | done |
+
+## Executor notes
+The entire plan was successfully implemented and the conformance suite passed. No tasks were omitted.
