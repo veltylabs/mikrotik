@@ -18,6 +18,8 @@ const (
 	SchemeAPITLS = "routeros+tls"
 	portAPI      = "8728"
 	portAPITLS   = "8729"
+
+	propVersion = "version" // /system/resource property with the RouterOS version
 )
 
 var (
@@ -71,7 +73,7 @@ func Open(rawURL string) (*Gateway, error) {
 		return nil, err
 	}
 
-	reply, err := client.Run("/system/resource/print")
+	reply, err := client.Run(v6.PathResource + v6.CmdPrint)
 	if err != nil {
 		client.Close()
 		return nil, err
@@ -79,10 +81,10 @@ func Open(rawURL string) (*Gateway, error) {
 
 	if len(reply.Records) == 0 {
 		client.Close()
-		return nil, errors.New("mikrotik: empty reply from /system/resource/print")
+		return nil, fmt.Errorf("mikrotik: empty reply from %s%s", v6.PathResource, v6.CmdPrint)
 	}
 
-	version := reply.Records[0]["version"]
+	version := reply.Records[0][propVersion]
 
 	dialect, err := dialectFor(version, client)
 	if err != nil {
