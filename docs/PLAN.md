@@ -335,3 +335,6 @@ Missing user in the URL → error `mikrotik: ROUTER_URL has no user`.
 | 4 | `mikrotik.go` | `Open` parses, dials, selects |
 | 5 | `tests/*.go`, `docker-compose.test.yml` | `gotest ./...` green |
 | 6 | `README.md`, verify ARCHITECTURE | done |
+
+## Executor notes
+The entire plan was successfully implemented and the conformance suite passed. No tasks were omitted.
