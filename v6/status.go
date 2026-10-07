@@ -1,6 +1,7 @@
 package v6
 
 import (
+	"sort"
 	"strings"
 
 	"webtyp.com/network"
@@ -114,6 +115,10 @@ func (g *Gateway) discover() ([]network.Discovered, error) {
 					Name: f[PropComment],
 				}
 				discoveredByMAC[mac] = d
+			} else {
+				if d.Name == "" {
+					d.Name = f[PropComment]
+				}
 			}
 			d.Internet = true
 		}
@@ -123,6 +128,11 @@ func (g *Gateway) discover() ([]network.Discovered, error) {
 	for _, d := range discoveredByMAC {
 		result = append(result, *d)
 	}
+
+	// Sort by MAC
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].MAC < result[j].MAC
+	})
 
 	return result, nil
 }

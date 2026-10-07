@@ -1,0 +1,24 @@
+version: '3'
+
+services:
+  ros6:
+    image: evilfreelancer/docker-routeros:6.49.19
+    privileged: true
+    devices:
+      - /dev/net/tun
+      - /dev/kvm
+    cap_add:
+      - NET_ADMIN
+    ports:
+      - "18728:8728"
+
+  ros7:
+    image: evilfreelancer/docker-routeros:7.20.2
+    privileged: true
+    devices:
+      - /dev/net/tun
+      - /dev/kvm
+    cap_add:
+      - NET_ADMIN
+    ports:
+      - "28728:8728"
