@@ -194,6 +194,14 @@ Produce the same change semantics as `webtyp.com/network/mem` (the conformance s
    `Object`: `"dhcp lease <ip>"`. Conflict when an unmanaged static lease with a different MAC holds
    the IP (reason `fmt.Sprintf("IP %s is held by unmanaged lease of %s", ip, mac)`).
 5. Managed leases whose MAC is not desired → `ChangeRemove`.
+
+   **`Change.Host` is always filled** — the conformance suite identifies changes by `Host.MAC`:
+   `ChangeAdd`/`ChangeUpdate`/`ChangeAdopt` carry the **desired** host; `ChangeRemove` carries the
+   host **rebuilt from the lease being removed**: `MAC` = `mac-address` (upper-case), `IP` =
+   `address`, `Name` = `comment` without the `ManagedMarker + " "` prefix, `Access` = its
+   `address-lists` mapped back (`ListLocal`→`AccessLocal`, `ListInternetFiltered`→
+   `AccessInternetFiltered`, `ListInternet`→`AccessInternet`) — one unexported function, the
+   inverse of the access→list switch. Site-wide changes (settings, baseline rules) carry a zero `Host`.
 6. Warnings: unmanaged Internet rules (enabled) whose MAC is not desired, reason exactly
    `"has Internet by a hand-made rule but is not registered"`.
 7. Fingerprint: SHA-256 (hex) over the canonical text of (a) every record of the snapshot that Plan
@@ -205,8 +213,13 @@ Change ordering inside `Plan.Changes` = the apply order from ARCHITECTURE ("Appl
 ### `Apply` (`v6/apply.go`)
 
 Re-plan; compare fingerprint → `network.ErrPlanStale`; conflicts → `network.ErrConflicts`; then run
-the changes in order. Firewall/NAT adds go at the **top** of their chain: `=place-before=<.id of the
-first rule in that chain>` (omit when the chain is empty). Adopt = `set` on the existing lease with the
+the changes in order. Firewall/NAT adds go at the **top** of their chain, **in the order
+listed** (internet, internet filtered, block; dns filter udp, dns filter tcp). Compute the anchor
+**once per chain, before the first insert**: the `.id` of the first rule of that chain as it was
+when Apply started. Every insert into that chain uses `=place-before=<that same anchor>`, so each new
+rule lands just above the anchor and the inserted rules keep their listed order. Do **not** re-read
+the first rule after each insert (that reverses the order) and never use a literal id like `*0`.
+When the chain is empty, `add` them in the listed order without `place-before`. Adopt = `set` on the existing lease with the
 managed comment and desired fields. If a command fails mid-way, stop and return the error (the next
 Plan shows what is left — never retry silently).
 
@@ -214,8 +227,13 @@ Plan shows what is left — never retry silently).
 
 - `Connections`: leases with `status=bound` → `SourceDHCP` (`mac-address`, `active-address` or
   `address`, `host-name`); ARP entries (`complete=true`) whose MAC has no bound lease → `SourceARP`.
-- `Discover`: unmanaged static leases and unmanaged Internet rules merged by MAC (`Name` from the
-  lease comment, else the rule comment; `Internet` true when an enabled rule exists).
+- `Discover`: unmanaged static leases and unmanaged Internet rules merged by MAC. `IP` from the
+  lease's **`address`** property (not `active-address`, which exists only while the lease is bound),
+  `Name` from the lease **`comment`**, else the rule comment; `Internet` true when an enabled rule
+  exists. The test emulator must store and return every property written by `add`/`set`
+  (`dynamic=false` for added leases), and the test fixture's `AddUnmanaged` writes
+  `/ip/dhcp-server/lease/add` with `=mac-address=`, `=address=`, `=comment=<Name>` (no marker) and
+  `=server=dhcp1`.
 
 MACs are compared and returned upper-case (`strings.ToUpper`).
 
