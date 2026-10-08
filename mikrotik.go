@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"sync"
 
 	"github.com/veltylabs/mikrotik/routeros"
 	"github.com/veltylabs/mikrotik/v6"
@@ -27,15 +28,24 @@ var (
 	ErrUnsupportedVersion = errors.New("mikrotik: unsupported RouterOS version")
 )
 
-// Gateway is a network.Gateway connected to one router.
+// Gateway is a network.Gateway over one router, reached through a reconnecting
+// Session. It detects the RouterOS version on every new connection.
 type Gateway struct {
-	network.Gateway
-	version string
-	conn    *routeros.Client
+	session    *routeros.Session
+	mu         sync.Mutex
+	dialect    network.Gateway
+	version    string
+	generation uint64
 }
 
-// Open parses rawURL (see EnvRouterURL), connects, reads the RouterOS
-// version from /system/resource and selects the v6 or v7 dialect.
+// New builds a Gateway over session (Open uses it).
+func New(session *routeros.Session) *Gateway {
+	return &Gateway{
+		session: session,
+	}
+}
+
+// Open validates rawURL (see EnvRouterURL) and returns a Gateway WITHOUT dialing.
 func Open(rawURL string) (*Gateway, error) {
 	u, err := url.Parse(rawURL)
 	if err != nil {
@@ -68,35 +78,48 @@ func Open(rawURL string) (*Gateway, error) {
 		host = host + ":" + port
 	}
 
-	client, err := routeros.Dial(host, user, password, useTLS)
+	dial := func() (routeros.Conn, error) {
+		return routeros.Dial(host, user, password, useTLS)
+	}
+
+	return New(routeros.NewSession(dial)), nil
+}
+
+func (g *Gateway) current() (network.Gateway, error) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+
+	// Re-detect when there is no cached dialect, when the connection is down
+	// (the next command will dial a router that may have been upgraded), or when
+	// a new connection was made since the dialect was chosen.
+	if g.dialect != nil && g.session.Live() && g.generation == g.session.Generation() {
+		return g.dialect, nil
+	}
+
+	reply, err := g.session.Run(v6.PathResource + v6.CmdPrint)
 	if err != nil {
 		return nil, err
 	}
 
-	reply, err := client.Run(v6.PathResource + v6.CmdPrint)
-	if err != nil {
-		client.Close()
-		return nil, err
-	}
+	// Read generation AFTER the print, since the print might have dialed and bumped it
+	newGen := g.session.Generation()
 
 	if len(reply.Records) == 0 {
-		client.Close()
 		return nil, fmt.Errorf("mikrotik: empty reply from %s%s", v6.PathResource, v6.CmdPrint)
 	}
 
 	version := reply.Records[0][propVersion]
 
-	dialect, err := dialectFor(version, client)
+	dialect, err := dialectFor(version, g.session)
 	if err != nil {
-		client.Close()
 		return nil, err
 	}
 
-	return &Gateway{
-		Gateway: dialect,
-		version: version,
-		conn:    client,
-	}, nil
+	g.dialect = dialect
+	g.version = version
+	g.generation = newGen
+
+	return g.dialect, nil
 }
 
 func dialectFor(version string, c routeros.Commander) (network.Gateway, error) {
@@ -108,11 +131,52 @@ func dialectFor(version string, c routeros.Commander) (network.Gateway, error) {
 	return nil, fmt.Errorf("%w: %s", ErrUnsupportedVersion, version)
 }
 
-// Version is the RouterOS version string reported by the router, e.g. "7.20.2 (stable)".
-func (g *Gateway) Version() string {
-	return g.version
+func (g *Gateway) Plan(d network.Desired) (network.Plan, error) {
+	dialect, err := g.current()
+	if err != nil {
+		return network.Plan{}, err
+	}
+	return dialect.Plan(d)
+}
+
+func (g *Gateway) Apply(d network.Desired, expected network.Fingerprint) (network.Plan, error) {
+	dialect, err := g.current()
+	if err != nil {
+		return network.Plan{}, err
+	}
+	return dialect.Apply(d, expected)
+}
+
+func (g *Gateway) Connections() ([]network.Connection, error) {
+	dialect, err := g.current()
+	if err != nil {
+		return nil, err
+	}
+	return dialect.Connections()
+}
+
+func (g *Gateway) Discover() ([]network.Discovered, error) {
+	dialect, err := g.current()
+	if err != nil {
+		return nil, err
+	}
+	return dialect.Discover()
+}
+
+// Version reads the version of the current connection (dialing if needed).
+func (g *Gateway) Version() (string, error) {
+	_, err := g.current()
+	if err != nil {
+		return "", err
+	}
+
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	return g.version, nil
 }
 
 func (g *Gateway) Close() error {
-	return g.conn.Close()
+	return g.session.Close()
 }
+
+var _ network.Gateway = (*Gateway)(nil)

@@ -35,9 +35,9 @@ const (
 	CmdSet    = "/set"
 	CmdRemove = "/remove"
 
-	BaselineInternet            = "[velty] internet"
-	BaselineInternetFiltered    = "[velty] internet filtered"
-	BaselineBlock               = "[velty] block"
-	BaselineDNSFilterUDP        = "[velty] dns filter udp"
-	BaselineDNSFilterTCP        = "[velty] dns filter tcp"
+	BaselineInternet         = "[velty] internet"
+	BaselineInternetFiltered = "[velty] internet filtered"
+	BaselineBlock            = "[velty] block"
+	BaselineDNSFilterUDP     = "[velty] dns filter udp"
+	BaselineDNSFilterTCP     = "[velty] dns filter tcp"
 )
