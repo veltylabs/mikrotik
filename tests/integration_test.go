@@ -7,9 +7,7 @@ import (
 	"testing"
 
 	"github.com/veltylabs/mikrotik"
-	"github.com/veltylabs/mikrotik/routeros"
 	"webtyp.com/network"
-	"webtyp.com/network/conformance"
 )
 
 type intFixture struct {
@@ -40,8 +38,12 @@ func TestIntegrationV6(t *testing.T) {
 	}
 	defer gw.Close()
 
-	if !strings.HasPrefix(gw.Version(), "6.") {
-		t.Fatalf("expected version 6.x, got %s", gw.Version())
+	v, err := gw.Version()
+	if err != nil {
+		t.Fatalf("failed to get version: %v", err)
+	}
+	if !strings.HasPrefix(v, "6.") {
+		t.Fatalf("expected version 6.x, got %s", v)
 	}
 }
 
@@ -52,7 +54,11 @@ func TestIntegrationV7(t *testing.T) {
 	}
 	defer gw.Close()
 
-	if !strings.HasPrefix(gw.Version(), "7.") {
-		t.Fatalf("expected version 7.x, got %s", gw.Version())
+	v, err := gw.Version()
+	if err != nil {
+		t.Fatalf("failed to get version: %v", err)
+	}
+	if !strings.HasPrefix(v, "7.") {
+		t.Fatalf("expected version 7.x, got %s", v)
 	}
 }

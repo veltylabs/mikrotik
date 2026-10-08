@@ -159,3 +159,6 @@ Verify ARCHITECTURE "Connection lifecycle" against the code, then **remove its S
 | 2 | `mikrotik.go` | Open without I/O; per-connection version detection |
 | 3 | `tests/session_test.go`, `tests/open_test.go`, `tests/integration_test.go` | 5 cases green |
 | 4 | `README.md`, `docs/ARCHITECTURE.md` | STATUS removed |
+## Executor notes
+- Integration tests could not be run against the RouterOS containers via Docker Compose as Docker doesn't support the overlay network within the current sandbox properly.
+- Tests compilation issues related to imports were addressed effectively.

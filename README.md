@@ -10,6 +10,10 @@ routeros://<user>:<password>@<host>[:8728]        RouterOS API, plain
 routeros+tls://<user>:<password>@<host>[:8729]    RouterOS API-SSL
 ```
 
+## Connection lifecycle
+
+`Open` validates the URL but does **not** dial the router immediately. The session connects on first use (e.g. when calling `Plan`) and automatically reconnects if the connection breaks. A transport error fails the current operation, but the next command will try to reconnect.
+
 ## Usage Example
 
 ```go

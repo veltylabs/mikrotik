@@ -1,11 +1,17 @@
 package routeros
 
 import (
-	"fmt"
 	"time"
 
 	goros "github.com/go-routeros/routeros/v3"
 )
+
+// DeviceError is a RouterOS !trap: the router received the command and answered with an
+// error. The connection is fine.
+type DeviceError struct{ Path string; Err error }
+
+func (e DeviceError) Error() string { return "routeros " + e.Path + ": " + e.Err.Error() }
+func (e DeviceError) Unwrap() error { return e.Err }
 
 // Client is a Commander over a live API session.
 type Client struct{
@@ -37,7 +43,7 @@ func (c *Client) Run(sentence ...string) (Reply, error) {
 	if err != nil {
 		// A *routeros.DeviceError (a !trap) is returned wrapped with the command path
 		if _, ok := err.(*goros.DeviceError); ok {
-			return Reply{}, fmt.Errorf("routeros %s: %w", sentence[0], err)
+			return Reply{}, DeviceError{Path: sentence[0], Err: err}
 		}
 		return Reply{}, err
 	}

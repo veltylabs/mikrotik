@@ -27,8 +27,6 @@ against. The router-side mitigation is to accept the API only from the applicati
 
 ## Connection lifecycle: lazy, reconnecting, never retrying
 
-> STATUS (remove this note when the "lazy reconnecting session" plan lands): this section is the spec of that plan.
-
 The router is not needed for the application to start, and it reboots (power cuts, upgrades). So:
 
 - **`Open` does not dial.** It validates `ROUTER_URL` (scheme, user) and returns. A malformed URL is
