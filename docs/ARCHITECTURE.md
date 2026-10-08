@@ -25,6 +25,24 @@ against. The router-side mitigation is to accept the API only from the applicati
 (`/ip service set api,api-ssl address=<server>/32`) with a dedicated user whose group grants only
 `api,read,write`.
 
+## Connection lifecycle: lazy, reconnecting, never retrying
+
+> STATUS (remove this note when the "lazy reconnecting session" plan lands): this section is the spec of that plan.
+
+The router is not needed for the application to start, and it reboots (power cuts, upgrades). So:
+
+- **`Open` does not dial.** It validates `ROUTER_URL` (scheme, user) and returns. A malformed URL is
+  an error at startup — a configuration mistake is seen when deploying. An unreachable router is
+  not: the first operation reports it, and the next one tries again.
+- **The session dials on first use and redials after a broken connection.** A transport failure
+  closes the session; the **next** command dials again. A RouterOS `!trap` (the router answered with
+  an error) does not drop the session.
+- **A failed command is never retried.** If the connection broke right after the router executed an
+  `add`, re-running it could duplicate an object. The operation returns the error (`Apply` stops, as
+  it always does), and the next `Plan` shows what is left.
+- **The version is detected on every new connection**, not once: upgrading the router from 6 to 7
+  while the application runs switches the dialect after the reconnect.
+
 ## Version independence
 
 RouterOS 6 and 7 speak **the same API protocol** (ports 8728/8729), so there is one transport
