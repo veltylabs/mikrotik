@@ -89,8 +89,10 @@ func (g *Gateway) current() (network.Gateway, error) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
-	gen := g.session.Generation()
-	if g.dialect != nil && g.generation == gen {
+	// Re-detect when there is no cached dialect, when the connection is down
+	// (the next command will dial a router that may have been upgraded), or when
+	// a new connection was made since the dialect was chosen.
+	if g.dialect != nil && g.session.Live() && g.generation == g.session.Generation() {
 		return g.dialect, nil
 	}
 

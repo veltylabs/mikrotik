@@ -71,43 +71,19 @@ func TestSession(t *testing.T) {
 		t.Fatalf("expected still 1 dial, got %d", dials)
 	}
 
-	// Break the connection
+	// Break the connection: the failing command is not retried and does not dial.
 	currentConn.errBreak = errors.New("connection reset")
-	// gw.Version() calls current() which only reads generation, not Run(), so it won't trigger the break if it's cached.
-	// Call Connections() which forces a Run() call onto the dialect
 	_, err = gw.Connections()
 	if err == nil || err.Error() != "connection reset" {
 		t.Fatalf("expected connection reset error, got %v", err)
 	}
-
 	if dials != 1 {
 		t.Fatalf("expected still 1 dial after broken command, got %d", dials)
 	}
 
-	// Next command should trigger a dial (Case 4: version switch)
+	// Case 4: the router came back upgraded. The very first operation after the
+	// break dials again AND re-detects the version.
 	currentVersion = "7.20.2 (stable)"
-
-	// We need to trigger the dial before calling Version(), because Version() only relies on current().
-	// current() checks generation. The generation is ONLY bumped during a dial inside Run().
-	// Wait, if generation is cached, how does current() know to run?
-	// It relies on generation mismatch. But if the previous dial was successful and matched, `current()` uses cached dialect!
-	// So we need to force a Run() to fail and let generation bump on the *next* Run.
-
-	// Wait, Connections() failed. But it failed *during* Run(). Did it bump generation? No, generation bumped when it dialed.
-	// So g.generation == g.session.Generation() is true!
-	// Which means `current()` will skip. We must force a command that uses `g.session.Run()` directly? No, current() does `g.session.Run()`.
-	// Wait, current() uses `g.session.Generation()`.
-	// If a connection breaks, `s.conn` is set to nil. But `s.generation` is NOT changed.
-	// So `g.generation == gen` is TRUE.
-	// That means `current()` thinks the dialect is fine!
-
-	// Let's call a method that forces a real network call, e.g. Connections(), which will call current() (fast path), then dial underlying, which dials and bumps generation.
-	_, err = gw.Connections()
-	if err != nil {
-		t.Fatalf("failed Connections after reconnect: %v", err)
-	}
-
-	// Now generation is bumped!
 	v, err = gw.Version()
 	if err != nil {
 		t.Fatalf("failed to get version after reconnect: %v", err)

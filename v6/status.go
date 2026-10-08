@@ -62,10 +62,10 @@ func (g *Gateway) connections() ([]network.Connection, error) {
 			}
 
 			conns = append(conns, network.Connection{
-				MAC:    mac,
-				IP:     ip,
+				MAC:      mac,
+				IP:       ip,
 				HostName: l[PropHostName],
-				Source: network.SourceDHCP,
+				Source:   network.SourceDHCP,
 			})
 		}
 	}

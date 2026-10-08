@@ -56,6 +56,14 @@ func (s *Session) Run(sentence ...string) (Reply, error) {
 	return reply, nil
 }
 
+// Live reports whether a connection is currently open. After a broken
+// connection it is false until the next command dials again.
+func (s *Session) Live() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.conn != nil
+}
+
 // Generation counts successful dials; it changes when a new connection was made.
 func (s *Session) Generation() uint64 {
 	s.mu.Lock()

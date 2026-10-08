@@ -8,13 +8,16 @@ import (
 
 // DeviceError is a RouterOS !trap: the router received the command and answered with an
 // error. The connection is fine.
-type DeviceError struct{ Path string; Err error }
+type DeviceError struct {
+	Path string
+	Err  error
+}
 
 func (e DeviceError) Error() string { return "routeros " + e.Path + ": " + e.Err.Error() }
 func (e DeviceError) Unwrap() error { return e.Err }
 
 // Client is a Commander over a live API session.
-type Client struct{
+type Client struct {
 	client *goros.Client
 }
 
