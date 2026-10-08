@@ -3,6 +3,8 @@ PLAN: "feat: lazy, reconnecting RouterOS session; Open no longer dials"
 TAG: v0.2.0
 EXECUTOR: jules
 REVIEWER: none
+STATUS: running
+SESSION: 13927726603179970495
 ---
 
 > This plan is dispatched via the CodeJob workflow. See skill: agents-workflow.
