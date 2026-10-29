@@ -12,3 +12,5 @@ webtyp.com/fmt v1.0.0 h1:W0vMMGC6ezg1q2LarAEaVnNvZ26hVqzZdQQH1wcNogM=
 webtyp.com/fmt v1.0.0/go.mod h1:FmTxx713R45J21kbH5JOmKGaaCap3fJPA9Yl2n4Ch7U=
 webtyp.com/network v0.1.1 h1:xyHJ0B0Y0p5LGmJUuvB6fdFp780y/2Egr6qVwt1A6gk=
 webtyp.com/network v0.1.1/go.mod h1:hOqhe00ENCQRdy8IyNRjMO1cIzFqwkaNpU2RpFP7bf4=
+webtyp.com/network v0.1.2 h1:6ZxaXE63Tdn26TqN/a38AVEUVyvkAy6v18jEmXDNSPE=
+webtyp.com/network v0.1.2/go.mod h1:hOqhe00ENCQRdy8IyNRjMO1cIzFqwkaNpU2RpFP7bf4=
